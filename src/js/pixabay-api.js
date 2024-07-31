@@ -1,4 +1,4 @@
-export async function searchImageByQuery(query, page = 1, per_page = 15) {
+export async function searchImageByQuery(query, page = 1, perPage = 15) {
   const URL = 'https://pixabay.com/api/';
   const API_KEY = '45098523-0f66f1bf08e0be6a1e71621a5';
 
