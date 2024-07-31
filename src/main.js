@@ -10,10 +10,15 @@ import { renderImages, onFetchError } from './js/render-functions';
 const searchForm = document.querySelector('.form-inline');
 const imageContainer = document.querySelector('.image-container');
 const loader = document.querySelector('.loader');
+const loadMoreBtn = document.querySelector('.load-more');
+
+let queryValue = '';
+let page = 1;
 
 searchForm.addEventListener('submit', handleSearch);
+loadMoreBtn.addEventListener('click', handleLoadMore);
 
-function handleSearch(event) {
+async function handleSearch(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
@@ -31,26 +36,56 @@ function handleSearch(event) {
     return;
   }
 
+  page = 1;
+  imageContainer.innerHTML = '';
+  loadMoreBtn.style.display = 'none';
   loader.style.display = 'block';
 
-  searchImageByQuery(queryValue)
-    .then(data => {
-      if (data.hits.length > 0) {
-        renderImages(data.hits);
-      } else {
-        iziToast.warning({
-          title: '',
-          backgroundColor: 'red',
-          message:
-            'Sorry, there are no images matching your search query. Please try again!',
-          position: 'topRight',
-          iconUrl: `${pathSprite}#icon-Group-1`,
-        });
-      }
-    })
-    .catch(onFetchError)
-    .finally(() => {
-      loader.style.display = 'none';
-      searchForm.reset();
-    });
+  try {
+    const data = await searchImageByQuery(queryValue);
+
+    if (data.hits.length > 0) {
+      renderImages(data.hits);
+    } else {
+      iziToast.warning({
+        title: '',
+        backgroundColor: 'red',
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
+        position: 'topRight',
+        iconUrl: `${pathSprite}#icon-Group-1`,
+      });
+    }
+  } catch (error) {
+    onFetchError(error);
+  } finally {
+    loader.style.display = 'none';
+    searchForm.reset();
+  }
+}
+
+async function handleLoadMore() {
+  page += 1;
+  loader.style.display = 'block';
+
+  try {
+    const data = await searchImageByQuery(queryValue, page);
+
+    if (data.hits.length > 0) {
+      renderImages(data.hits, true);
+    } else {
+      iziToast.warning({
+        title: '',
+        backgroundColor: 'red',
+        message: 'No more images to load.',
+        position: 'topRight',
+        iconUrl: `${pathSprite}#icon-Group-1`,
+      });
+      loadMoreBtn.style.display = 'none';
+    }
+  } catch (error) {
+    onFetchError(error);
+  } finally {
+    loader.style.display = 'none';
+  }
 }

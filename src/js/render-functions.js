@@ -5,9 +5,12 @@ import 'izitoast/dist/css/iziToast.min.css';
 
 const spritePath = '../img/icon.svg';
 
-export function renderImages(images) {
+export function renderImages(images, append = false) {
   const imageContainer = document.querySelector('.gallery');
-  imageContainer.innerHTML = '';
+
+  if (!append) {
+    imageContainer.innerHTML = '';
+  }
 
   images.forEach(image => {
     const imgCard = document.createElement('a');
