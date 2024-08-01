@@ -9,11 +9,13 @@ import { renderImages, onFetchError } from './js/render-functions';
 
 const searchForm = document.querySelector('.form-inline');
 const imageContainer = document.querySelector('.image-container');
-const loader = document.querySelector('.loader');
 const loadMoreBtn = document.querySelector('.load-more');
+const loader = document.querySelector('.loader');
 
 let queryValue = '';
 let page = 1;
+let totalImagesLoaded = 0;
+let totalHits = 0;
 
 searchForm.addEventListener('submit', handleSearch);
 loadMoreBtn.addEventListener('click', handleLoadMore);
@@ -22,7 +24,7 @@ async function handleSearch(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
-  const queryValue = form.elements.query.value.trim().toLowerCase();
+  queryValue = form.elements.query.value.trim().toLowerCase();
 
   if (queryValue === '') {
     iziToast.warning({
@@ -37,15 +39,31 @@ async function handleSearch(event) {
   }
 
   page = 1;
+  totalImagesLoaded = 0;
   imageContainer.innerHTML = '';
   loadMoreBtn.style.display = 'none';
   loader.style.display = 'block';
 
   try {
-    const data = await searchImageByQuery(queryValue);
+    const data = await searchImageByQuery(queryValue, page);
+    totalHits = data.totalHits;
 
     if (data.hits.length > 0) {
       renderImages(data.hits);
+      totalImagesLoaded += data.hits.length;
+
+      if (totalImagesLoaded < totalHits) {
+        loadMoreBtn.style.display = 'block';
+      } else {
+        iziToast.info({
+          title: '',
+          message: "We're sorry, but you've reached the end of search results.",
+          position: 'topRight',
+          backgroundColor: 'blue',
+          icon: '',
+          iconUrl: `${pathSprite}#icon-Group-1`,
+        });
+      }
     } else {
       iziToast.warning({
         title: '',
@@ -70,18 +88,29 @@ async function handleLoadMore() {
 
   try {
     const data = await searchImageByQuery(queryValue, page);
+    totalImagesLoaded += data.hits.length;
 
     if (data.hits.length > 0) {
       renderImages(data.hits, true);
-    } else {
-      iziToast.warning({
+
+      const { height: cardHeight } =
+        imageContainer.firstElementChild.getBoundingClientRect();
+      window.scrollBy({
+        top: cardHeight * 2,
+        behavior: 'smooth',
+      });
+    }
+
+    if (totalImagesLoaded >= totalHits) {
+      loadMoreBtn.style.display = 'none';
+      iziToast.info({
         title: '',
-        backgroundColor: 'red',
-        message: 'No more images to load.',
+        message: "We're sorry, but you've reached the end of search results.",
         position: 'topRight',
+        backgroundColor: 'blue',
+        icon: '',
         iconUrl: `${pathSprite}#icon-Group-1`,
       });
-      loadMoreBtn.style.display = 'none';
     }
   } catch (error) {
     onFetchError(error);
